@@ -44,13 +44,33 @@ const errorHandler = (error, req, res, next) => {
         message: error?.message,
     });
 };
+
 // redis.del('name');
+
 const app = express();
-const port = 4000;
+app.set('view engine', 'ejs');
+const port = 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(sessionMiddleware);
+
+app.get('/', (req, res) => {
+    if (req?.session?.user) {
+        return res.render('dashboard');
+    } else {
+        return res.redirect('/login');
+    }
+});
+
+app.get('/login', (req, res) => {
+    console.log(req?.session?.user);
+    if (req?.session?.user) {
+        return res.redirect('/');
+    } else {
+        return res.render('login');
+    }
+});
 
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
@@ -63,17 +83,20 @@ app.post('/login', (req, res) => {
         email: email,
     };
     req.session.user = user;
-    return res.status(200).json(user);
+    return res.redirect('/');
+    // return res.status(200).json(user);
 });
 
-app.post('/logout', authenticate, (req, res) => {
+app.post('/logout', (req, res) => {
     res.clearCookie('sessionId');
+    req.session.user = null;
     req.session.destroy(function (err) {
         // cannot access session here
     });
-    return res.status(200).json({
-        message: 'Log out successfully',
-    });
+    return res.redirect('/login');
+    // return res.status(200).json({
+    //     message: 'Log out successfully',
+    // });
 });
 
 app.get('/profile', authenticate, (req, res) => {
