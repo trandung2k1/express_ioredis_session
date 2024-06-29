@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Redis } = require('ioredis');
 const colors = require('colors');
 const express = require('express');
@@ -5,7 +6,17 @@ const RedisStore = require('connect-redis').default;
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const authenticate = require('./auth.middleware');
-const redis = new Redis();
+
+//Redis local
+// const redis = new Redis({});
+
+// Redis ec2
+const redis = new Redis({
+    host: process.env.REDIS_HOST,
+    port: +process.env.REDIS_PORT,
+    username: process.env.REDIS_USER,
+    password: process.env.REDIS_PASSWORD,
+});
 const redisStore = new RedisStore({
     client: redis,
     prefix: 'app:',
@@ -104,6 +115,7 @@ app.get('/profile', authenticate, (req, res) => {
     return res.status(200).json(req.session.user);
 });
 app.use(errorHandler);
-app.listen(port, () => {
+app.listen(port, async () => {
+    await redis.set('name', 'Dung');
     console.log(colors.green(`Server listening on http://localhost:${port}`));
 });
